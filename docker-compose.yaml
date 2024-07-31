@@ -1,5 +1,4 @@
 services:
-  
   postgres:
     image: postgres:latest
     container_name: postgres_container_post
@@ -15,7 +14,11 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
       - "2181:2181"
+    networks:
+      - kafka-network
   kafka:
+    depends_on:
+      - zookeeper
     image: wurstmeister/kafka
     ports:
       - "9095:9094"
@@ -28,6 +31,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
 
       KAFKA_CREATE_TOPICS: "posts"
+    networks:
+      - kafka-network
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui-2
@@ -41,3 +46,43 @@ services:
     links:
       - kafka
       - zookeeper
+    networks:
+      - kafka-network
+  note:
+    container_name: "notifications_service"
+    build:
+      context: ./notifications_service
+      dockerfile: DockerFileNote
+    ports:
+      - "8084:8084"
+    networks:
+      - kafka-network
+    depends_on:
+      - postgres
+      - kafka
+  user_service:
+    container_name: "user_service"
+    build:
+      context: ./user_service
+      dockerfile: DockerFileUser
+    networks:
+      - kafka-network
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+  post_service:
+    container_name: "post_service"
+    build:
+      context: ./post_service
+      dockerfile: DockerFilePost
+    ports:
+      - "8083:8083"
+    networks:
+      - kafka-network
+    depends_on:
+      - postgres
+      - kafka
+networks:
+  kafka-network:
+    driver: bridge

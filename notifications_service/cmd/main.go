@@ -45,6 +45,7 @@ func main() {
 		SSLMode:  cfg.SSLmode,
 	}
 
+	log.Info("connecting to postgres")
 	storage, err := postgres.New(dbConf)
 	if err != nil {
 		log.Error("failed to init storage", sl.Err(err))
@@ -90,6 +91,7 @@ func main() {
 	//	go func() {
 	err = kafkaService.StartConsuming(ctx, "posts", []string{cfg.KafkaBootstrapServer}, "notifications")
 	if err != nil {
+		log.Error("failed to start kafka consumer", err)
 		return
 	}
 	//	}()

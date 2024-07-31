@@ -1,0 +1,16 @@
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /build
+COPY . .
+RUN go mod download
+RUN go build -o post ./cmd/main.go
+
+FROM alpine
+
+WORKDIR /root
+COPY --from=builder /build/post .
+COPY --from=builder /build/config ./config/
+
+EXPOSE 8083:8083
+
+CMD ["/root/post"]
